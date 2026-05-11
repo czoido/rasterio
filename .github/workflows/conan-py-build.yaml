@@ -73,11 +73,11 @@ jobs:
           python-version: ${{ matrix.python }}
       - name: Install Conan + detect profile
         run: |
-          pip install conan
+          python -m pip install --upgrade pip conan
           conan profile detect --force
         shell: bash
       - name: Build wheel
-        run: pip wheel . --no-deps -w dist/ -vv
+        run: pip wheel . --no-deps -w dist/ -v
         shell: bash
       - uses: actions/upload-artifact@v4
         with:
