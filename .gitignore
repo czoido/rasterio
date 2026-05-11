@@ -93,3 +93,4 @@ MANIFEST
 mprofile*.dat
 memray-*
 issue????.py
+_build/

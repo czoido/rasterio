@@ -1,0 +1,131 @@
+name: conan-py-build CI
+
+on:
+  push:
+    branches: [conan-py-build]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTEST_FILTER: >-
+    not gdalbin
+    and not test_ensure_env_decorator_sets_gdal_data_prefix
+    and not test_tiled_dataset_blocksize_guard
+    and not test_untiled_dataset_blocksize
+    and not test_positional_calculation_byindex
+    and not test_transform_geom_polygon
+    and not test_reproject_error_propagation
+    and not test_info_azure_unsigned
+    and not test_decimated_no_use_overview
+    and not test_datasetreader_ctor_url
+    and not test_copyfiles_same_dataset_another_name
+    and not test_python_file_reuse
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pre-commit
+      - run: pre-commit run --show-diff-on-failure --all-files
+
+  build_sdist:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install build twine
+      - run: python -m build --sdist
+      - run: twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  build_wheel:
+    name: wheel ${{ matrix.os }} py${{ matrix.python }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            python: '3.12'
+          - os: macos-14
+            python: '3.12'
+          - os: windows-2022
+            python: '3.12'
+    runs-on: ${{ matrix.os }}
+    env:
+      CONAN_PY_BUILD_PROFILE_AUTODETECT: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install Conan + detect profile
+        run: |
+          pip install conan
+          conan profile detect --force
+        shell: bash
+      - name: Build wheel
+        run: pip wheel . --no-deps -w dist/ -vv
+        shell: bash
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist/*.whl
+
+  test_wheel:
+    name: test ${{ matrix.os }} py${{ matrix.python }}
+    needs: build_wheel
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            python: '3.12'
+          - os: macos-14
+            python: '3.12'
+          - os: windows-2022
+            python: '3.12'
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist
+      - name: Install wheel + dev deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --pre --no-index --find-links dist rasterio
+          python -m pip install -r requirements-dev.txt
+        shell: bash
+      - name: Smoke checks
+        run: |
+          rio --version
+          rio --gdal-version
+          rio --show-versions
+        shell: bash
+      - name: Clean workspace except dist and tests
+        run: |
+          shopt -s extglob
+          rm -rf !(dist|tests)
+        shell: bash
+      - name: Run tests
+        env:
+          PROJ_NETWORK: 'ON'
+        run: python -m pytest -vv tests -m "not wheel" -k "$PYTEST_FILTER"
+        shell: bash
