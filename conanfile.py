@@ -38,25 +38,29 @@ class RasterioConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
-        cmake.configure(variables={
-            "GDAL_VERSION_STR": str(self.dependencies["gdal"].ref.version),
-        })
+        cmake.configure(
+            variables={
+                "GDAL_VERSION_STR": str(self.dependencies["gdal"].ref.version),
+            }
+        )
         cmake.build()
 
     def package(self):
         cmake = CMake(self)
         cmake.install()
 
-        gdal_res = os.path.join(
-            self.dependencies["gdal"].package_folder, "res", "gdal"
+        gdal_res = os.path.join(self.dependencies["gdal"].package_folder, "res", "gdal")
+        copy(
+            self,
+            "*",
+            src=gdal_res,
+            dst=os.path.join(self.package_folder, "rasterio", "gdal_data"),
         )
-        copy(self, "*",
-             src=gdal_res,
-             dst=os.path.join(self.package_folder, "rasterio", "gdal_data"))
 
-        proj_res = os.path.join(
-            self.dependencies["proj"].package_folder, "res"
+        proj_res = os.path.join(self.dependencies["proj"].package_folder, "res")
+        copy(
+            self,
+            "*",
+            src=proj_res,
+            dst=os.path.join(self.package_folder, "rasterio", "proj_data"),
         )
-        copy(self, "*",
-             src=proj_res,
-             dst=os.path.join(self.package_folder, "rasterio", "proj_data"))
