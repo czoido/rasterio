@@ -101,7 +101,8 @@ transform = "rasterio.rio.transform:transform"
 warp = "rasterio.rio.warp:warp"
 
 [tool.conan-py-build]
-extra-profile = "cpp17.profile"
+# gdal/3.12.1 requires C++17
+extra-arguments = ["-s=compiler.cppstd=17"]
 
 [tool.conan-py-build.version]
 file = "rasterio/__init__.py"

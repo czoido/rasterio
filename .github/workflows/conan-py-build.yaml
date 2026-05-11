@@ -81,6 +81,9 @@ jobs:
           restore-keys: |
             conan-${{ matrix.os }}-py${{ matrix.python }}-
             conan-${{ matrix.os }}-
+      - name: Install patchelf (Linux RPATH patching)
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y patchelf
       - name: Install Conan + detect profile
         run: |
           python -m pip install --upgrade pip conan
