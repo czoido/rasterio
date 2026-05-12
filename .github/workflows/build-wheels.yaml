@@ -106,23 +106,17 @@ jobs:
           # (auditwheel / delocate / delvewheel) handle SONAME mangling.
           # System packages needed inside the manylinux container:
           #   - perl-core: openssl's ./Configure uses IPC::Cmd.
-          #   - m4 / autoconf / automake / libtool: autotools chain that
-          #     several recipes (libcurl, libiconv, ...) need via autoreconf.
-          #     Use the system tools instead of letting Conan build the
-          #     entire chain from sources, which is fragile inside this
-          #     minimal AlmaLinux 8 image (m4 builds fail its own runtime
-          #     check on some kernels). These tools only run at build time
-          #     and never enter the wheel.
+          #   - m4: Conan's m4 fails its own sigsegv-detection runtime test
+          #     in the minimal AlmaLinux 8 image; system m4 is plain GNU
+          #     1.4.18 and works. Declared in cibw.profile so Conan skips
+          #     building it.
+          #   - pkgconfig: harmless and used by several recipes.
+          # autoconf / automake / libtool are intentionally NOT installed:
+          # the system versions in AlmaLinux 8 are too old for modern
+          # recipes (libcurl pins automake>=1.18). Conan builds those —
+          # and since they aren't on /usr/bin/, no competing PATH entries.
           CIBW_BEFORE_ALL_LINUX: |
-            yum install -y perl-core m4 autoconf automake libtool pkgconfig
-          # Point autotools to the system binaries; autoreconf / aclocal /
-          # autom4te honour these env vars before falling back to PATH.
-          CIBW_ENVIRONMENT_LINUX: >-
-            M4=/usr/bin/m4
-            AUTOCONF=/usr/bin/autoconf
-            AUTOMAKE=/usr/bin/automake
-            LIBTOOL=/usr/bin/libtool
-            AUTORECONF=/usr/bin/autoreconf
+            yum install -y perl-core m4 pkgconfig
           CIBW_BEFORE_BUILD: |
             python -m pip install conan
             conan profile detect --force
