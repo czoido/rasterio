@@ -123,6 +123,17 @@ jobs:
           # Mount the runner's Conan cache into the manylinux container so
           # 40+ recipes don't get rebuilt from sources every run.
           CIBW_CONTAINER_ENGINE: 'docker; create_args: -v /home/runner/.conan2:/root/.conan2'
+          # auditwheel resolves NEEDED entries via the binary's RPATH +
+          # LD_LIBRARY_PATH + system paths. Our bundled libs (libgdal,
+          # libproj, ...) live inside the wheel itself and don't have
+          # RPATH set. Extract the wheel to a temp dir and point
+          # LD_LIBRARY_PATH there so auditwheel can find them while
+          # repairing (it'll set the correct RPATH on the output).
+          CIBW_REPAIR_WHEEL_COMMAND_LINUX: >-
+            tmp=$(mktemp -d) &&
+            unzip -q {wheel} -d "$tmp" &&
+            LD_LIBRARY_PATH="$tmp/rasterio:$LD_LIBRARY_PATH"
+            auditwheel repair -w {dest_dir} {wheel}
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
