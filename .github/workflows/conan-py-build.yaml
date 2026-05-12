@@ -92,16 +92,46 @@ jobs:
       - name: Build wheel
         run: pip wheel . --no-deps -w dist-raw/ -v
         shell: bash
-      - name: Repair wheel (Linux — mangle SONAMEs of bundled libs)
+      - name: Dedupe + repair wheel (Linux)
         if: runner.os == 'Linux'
         run: |
-          python -m pip install auditwheel
-          echo "=== bundled .so files in raw wheel ==="
-          unzip -l dist-raw/rasterio-*.whl | grep -E "\.so(\.|$)" || true
-          echo "=== auditwheel show ==="
-          auditwheel show dist-raw/rasterio-*.whl || true
+          python -m pip install auditwheel wheel
+          # 1) Extract the raw wheel built by conan-py-build (distlib flattens
+          #    Conan's symlink chains into duplicate file copies).
+          mkdir -p extracted dist-deduped dist
+          cd extracted && unzip -q ../dist-raw/rasterio-*.whl && cd -
+          # 2) For each group of identical files in the same dir, keep the
+          #    most-versioned as the canonical and turn the rest into actual
+          #    symlinks. This restores the libfoo.so → libfoo.so.N → libfoo.so.N.M.K
+          #    chain that the dynamic loader expects.
+          python << 'PY'
+          import hashlib
+          from pathlib import Path
+          from collections import defaultdict
+
+          groups = defaultdict(list)
+          for p in Path("extracted").rglob("*"):
+              if not p.is_file() or p.is_symlink():
+                  continue
+              h = hashlib.sha256(p.read_bytes()).hexdigest()
+              groups[(p.parent, h)].append(p)
+
+          for (parent, _), files in groups.items():
+              if len(files) < 2:
+                  continue
+              canonical = max(files, key=lambda f: len(f.name))
+              for f in files:
+                  if f != canonical:
+                      f.unlink()
+                      f.symlink_to(canonical.name)
+          PY
+          # 3) Repack with `wheel` (preserves symlinks via Unix external_attr).
+          python -m wheel pack extracted/ --dest-dir dist-deduped/
+          # 4) Audit + repair.
+          echo "=== auditwheel show (deduped) ==="
+          auditwheel show dist-deduped/rasterio-*.whl || true
           echo "=== auditwheel repair ==="
-          auditwheel repair dist-raw/rasterio-*.whl -w dist/
+          auditwheel repair dist-deduped/rasterio-*.whl -w dist/
         shell: bash
       - name: Move unrepaired wheel (macOS/Windows)
         if: runner.os != 'Linux'
