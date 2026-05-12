@@ -14,13 +14,6 @@ class RasterioConan(ConanFile):
         "*/*:shared": True,
         # Trim heavy optional drivers — keep the demo build practical.
         "gdal/*:with_arrow": False,
-        # Static-link OpenSSL so libcurl carries its symbols directly.
-        # If we bundled libssl.so.3 / libcrypto.so.3 in the wheel, Python's
-        # `ssl` stdlib (loaded by pytest plugins, requests, fsspec, etc.)
-        # pre-loads the *system* libssl.so.3 first. The dynamic linker then
-        # reuses that older copy for any later dlopen of the same SONAME,
-        # and our newer OpenSSL symbols (OPENSSL_3.2.0+) go missing.
-        "openssl/*:shared": False,
     }
 
     def set_version(self):
