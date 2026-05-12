@@ -101,6 +101,11 @@ jobs:
           # conan-py-build resolves the whole C/C++ graph via conanfile.py
           # + Conan profiles. cibuildwheel's default repair commands
           # (auditwheel / delocate / delvewheel) handle SONAME mangling.
+          # System packages needed inside the manylinux container by recipes
+          # Conan rebuilds from sources (perl-core: openssl's ./Configure
+          # uses IPC::Cmd, missing from the minimal AlmaLinux 8 image).
+          CIBW_BEFORE_ALL_LINUX: |
+            yum install -y perl-core
           CIBW_BEFORE_BUILD: |
             python -m pip install conan
             conan profile detect --force
