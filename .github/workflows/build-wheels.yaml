@@ -86,10 +86,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.conan2
-          key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py', 'pyproject.toml') }}
+          # "cibw" prefix isolates the manylinux-container cache from any
+          # earlier cache built directly on the runner OS — the binaries
+          # are ABI-incompatible (different glibc baseline).
+          key: conan-cibw-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py', 'pyproject.toml') }}
           restore-keys: |
-            conan-${{ matrix.os }}-${{ matrix.arch }}-
-            conan-${{ matrix.os }}-
+            conan-cibw-${{ matrix.os }}-${{ matrix.arch }}-
+            conan-cibw-${{ matrix.os }}-
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.1
