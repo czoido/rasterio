@@ -1,15 +1,11 @@
-# Build tools provided by the manylinux container via yum (perl-core m4
-# autoconf automake libtool pkgconfig). Conan would otherwise rebuild them
-# from sources, which is fragile inside the minimal AlmaLinux 8 image —
-# m4's configure runs a sigsegv-detection test that fails in restricted
-# containers, producing a binary that autom4te then rejects.
+# m4 from the system: Conan's m4 fails its own sigsegv-detection runtime
+# test in the minimal AlmaLinux 8 manylinux container, producing a binary
+# that autom4te rejects. System m4 (yum install m4) is plain GNU 1.4.18
+# and works fine.
 #
-# These tools only run at build time; nothing from them ends up in the
-# wheel. The user-facing host stack (gdal, proj, geos, libcurl, openssl,
-# ...) is still built by Conan with its own settings/options.
+# autoconf / automake / libtool intentionally NOT listed: AlmaLinux 8's
+# versions (1.16.1, 2.69, 2.4.6) are too old for modern recipes like
+# libcurl/8.20.0 that pin automake>=1.18. We let Conan build those — they
+# in turn pick up system m4 via this platform_tool_requires entry.
 [platform_tool_requires]
 m4/1.4.19
-autoconf/2.71
-automake/1.16.5
-libtool/2.4.7
-pkgconf/2.2.0
