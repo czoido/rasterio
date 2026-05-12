@@ -127,11 +127,14 @@ jobs:
           PY
           # 3) Repack with `wheel` (preserves symlinks via Unix external_attr).
           python -m wheel pack extracted/ --dest-dir dist-deduped/
-          # 4) Audit + repair.
+          # 4) Audit + repair. auditwheel uses LD_LIBRARY_PATH to locate the
+          #    bundled libs while it rewrites NEEDED entries — point it at
+          #    the extracted wheel dir so it can find libproj.so.25 etc.
           echo "=== auditwheel show (deduped) ==="
           auditwheel show dist-deduped/rasterio-*.whl || true
           echo "=== auditwheel repair ==="
-          auditwheel repair dist-deduped/rasterio-*.whl -w dist/
+          LD_LIBRARY_PATH="$PWD/extracted/rasterio:$LD_LIBRARY_PATH" \
+            auditwheel repair dist-deduped/rasterio-*.whl -w dist/
         shell: bash
       - name: Move unrepaired wheel (macOS/Windows)
         if: runner.os != 'Linux'
