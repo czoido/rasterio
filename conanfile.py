@@ -12,8 +12,6 @@ class RasterioConan(ConanFile):
 
     default_options = {
         "*/*:shared": True,
-        # Trim heavy optional drivers — keep the demo build practical.
-        "gdal/*:with_arrow": False,
     }
 
     def set_version(self):

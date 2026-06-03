@@ -118,7 +118,6 @@ jobs:
           CIBW_BEFORE_ALL_LINUX: |
             yum install -y perl-core m4 pkgconfig
           CIBW_BEFORE_BUILD: |
-            python -m pip install git+https://github.com/czoido/conan-py-build@deploy-to-conan-libs
             python -m pip install conan
             conan profile detect --force
           # Mount the runner's Conan cache into the manylinux container so
