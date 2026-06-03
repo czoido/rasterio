@@ -101,11 +101,9 @@ transform = "rasterio.rio.transform:transform"
 warp = "rasterio.rio.warp:warp"
 
 [tool.conan-py-build]
-# gdal/3.12.1 requires C++17
-# zlib and expat are in the manylinux allowlist so auditwheel does not bundle
-# them — link statically to avoid depending on the system version at runtime.
 extra-arguments = [
     "-s=compiler.cppstd=17",
+    "-s=compiler.version=13",
     "-o=zlib/*:shared=False",
     "-o=expat/*:shared=False",
 ]
