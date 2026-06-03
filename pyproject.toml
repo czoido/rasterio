@@ -102,7 +102,13 @@ warp = "rasterio.rio.warp:warp"
 
 [tool.conan-py-build]
 # gdal/3.12.1 requires C++17
-extra-arguments = ["-s=compiler.cppstd=17"]
+# zlib and expat are in the manylinux allowlist so auditwheel does not bundle
+# them — link statically to avoid depending on the system version at runtime.
+extra-arguments = [
+    "-s=compiler.cppstd=17",
+    "-o=zlib/*:shared=False",
+    "-o=expat/*:shared=False",
+]
 # In CI (manylinux container), tell Conan the autotools chain comes from
 # the system (yum install ...). Outside CI this profile is harmless: if a
 # listed tool isn't on PATH, Conan falls back to building it from sources.
