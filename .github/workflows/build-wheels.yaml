@@ -130,6 +130,10 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
             delvewheel repair --add-path "{wheel}/../.conan-libs" -w "{dest_dir}" "{wheel}"
           CIBW_BEFORE_ALL_WINDOWS: pip install delvewheel
+      - name: Fix Conan cache ownership
+        if: runner.os == 'Linux'
+        run: sudo chown -R "$USER" ~/.conan2
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
