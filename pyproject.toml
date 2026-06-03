@@ -103,7 +103,7 @@ warp = "rasterio.rio.warp:warp"
 [tool.conan-py-build]
 extra-arguments = [
     "-s=compiler.cppstd=17",
-    "-s=compiler.version=13",
+    "-o=gdal/*:with_arrow=False",
     "-o=zlib/*:shared=False",
     "-o=expat/*:shared=False",
 ]
