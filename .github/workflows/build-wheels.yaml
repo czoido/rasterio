@@ -67,13 +67,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Smoke-test the migration on Linux x86_64 first. The upstream matrix
-        # also covers aarch64, macOS arm64+x86_64, and Windows x64+ARM64 —
-        # they slot back in once Linux is green; with conan-py-build the
-        # per-platform setup (vcpkg / brew / yum) is no longer needed.
         include:
-         - os: ubuntu-22.04
-           arch: x86_64
+          - os: ubuntu-22.04
+            arch: x86_64
+          - os: ubuntu-22.04
+            arch: aarch64
+          - os: macos-14
+            arch: arm64
+          - os: macos-13
+            arch: x86_64
+          - os: windows-2022
+            arch: AMD64
 
     steps:
       - name: Checkout
@@ -120,12 +124,15 @@ jobs:
           CIBW_BEFORE_BUILD: |
             python -m pip install conan
             conan profile detect --force
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
           # Mount the runner's Conan cache into the manylinux container so
           # 40+ recipes don't get rebuilt from sources every run.
           CIBW_CONTAINER_ENGINE: 'docker; create_args: -v /home/runner/.conan2:/root/.conan2'
           # The backend deploys shared libs to .conan-libs/ and sets an absolute
           # RPATH on the extensions so auditwheel discovers them without any
           # LD_LIBRARY_PATH workaround.
+          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >-
+            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: >-
             delvewheel repair --add-path "{wheel}/../.conan-libs" -w "{dest_dir}" "{wheel}"
           CIBW_BEFORE_ALL_WINDOWS: pip install delvewheel
@@ -146,8 +153,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["windows-2022", "windows-11-arm", "ubuntu-22.04-arm", "ubuntu-22.04", "macos-14", "macos-15-intel"]
-        python-version: ["3.14","3.14t", "3.13", "3.12"]
+        os: ["ubuntu-22.04", "ubuntu-22.04-arm", "macos-14", "macos-13", "windows-2022"]
+        python-version: ["3.14", "3.14t", "3.13", "3.12"]
         
     steps:
       - name: Checkout Rasterio
