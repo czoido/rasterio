@@ -110,7 +110,6 @@ extra-arguments = [
 # In CI (manylinux container), tell Conan the autotools chain comes from
 # the system (yum install ...). Outside CI this profile is harmless: if a
 # listed tool isn't on PATH, Conan falls back to building it from sources.
-extra-profile-build = "cibw.profile"
 
 [tool.conan-py-build.version]
 file = "rasterio/__init__.py"

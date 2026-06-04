@@ -97,6 +97,7 @@ jobs:
           restore-keys: |
             conan-cibw-${{ matrix.os }}-${{ matrix.arch }}-
             conan-cibw-${{ matrix.os }}-
+          save-always: true
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.4.1
@@ -121,10 +122,11 @@ jobs:
           # and since they aren't on /usr/bin/, no competing PATH entries.
           CIBW_BEFORE_ALL_LINUX: |
             yum install -y perl-core m4 pkgconfig
+          CIBW_CONFIG_SETTINGS_LINUX: "extra-profile-build=cibw.profile"
+          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
           CIBW_BEFORE_BUILD: |
             python -m pip install conan
             conan profile detect --force
-          CIBW_ENVIRONMENT_MACOS: MACOSX_DEPLOYMENT_TARGET=11.0
           # Mount the runner's Conan cache into the manylinux container so
           # 40+ recipes don't get rebuilt from sources every run.
           CIBW_CONTAINER_ENGINE: 'docker; create_args: -v /home/runner/.conan2:/root/.conan2'
