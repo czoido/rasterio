@@ -35,8 +35,10 @@ class RasterioConan(ConanFile):
         cmake_layout(self)
 
     def generate(self):
+        import sys
         tc = CMakeToolchain(self)
         tc.cache_variables["Python3_FIND_FRAMEWORK"] = "NEVER"
+        tc.cache_variables["Python3_EXECUTABLE"] = sys.executable
         tc.cache_variables["GDAL_VERSION_STR"] = str(self.dependencies["gdal"].ref.version)
         tc.generate()
 
