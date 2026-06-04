@@ -8,7 +8,7 @@ from conan.tools.files import copy, load
 class RasterioConan(ConanFile):
     name = "rasterio"
     settings = "os", "compiler", "build_type", "arch"
-    generators = "CMakeToolchain", "CMakeDeps"
+    generators = "CMakeDeps"
 
     default_options = {
         "*/*:shared": True,
