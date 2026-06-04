@@ -1,7 +1,7 @@
 import os
 
 from conan import ConanFile
-from conan.tools.cmake import CMake, cmake_layout
+from conan.tools.cmake import CMake, CMakeToolchain, cmake_layout
 from conan.tools.files import copy, load
 
 
@@ -34,13 +34,15 @@ class RasterioConan(ConanFile):
     def layout(self):
         cmake_layout(self)
 
+    def generate(self):
+        tc = CMakeToolchain(self)
+        tc.cache_variables["Python3_FIND_FRAMEWORK"] = "NEVER"
+        tc.cache_variables["GDAL_VERSION_STR"] = str(self.dependencies["gdal"].ref.version)
+        tc.generate()
+
     def build(self):
         cmake = CMake(self)
-        cmake.configure(
-            variables={
-                "GDAL_VERSION_STR": str(self.dependencies["gdal"].ref.version),
-            }
-        )
+        cmake.configure()
         cmake.build()
 
     def package(self):
